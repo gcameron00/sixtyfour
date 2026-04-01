@@ -61,7 +61,7 @@ sixtyfour/
 |-------|-------|--------|
 | 1 | Core renderer — 64×64 canvas, pixel API, render loop | Done |
 | 2 | UI overlay — fade in/out controls | Done |
-| 3 | Animation engine + first animations | Not started |
+| 3 | Animation engine + first animations | Done |
 | 4 | Clock modes (digital + analogue) | Not started |
 | 5 | Ripple pool | Not started |
 | 6 | Album art — built-in covers (Screamadelica first) | Not started |

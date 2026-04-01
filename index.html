@@ -6,7 +6,7 @@
     <title>sixtyfour</title>
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="/assets/css/styles.css">
-    <script defer src="/assets/js/main.js"></script>
+    <script type="module" src="/assets/js/main.js"></script>
   </head>
   <body class="display">
     <div class="display-wrap">
@@ -17,6 +17,7 @@
     <div id="ui-overlay" aria-hidden="true">
       <div id="mode-bar">
         <span id="current-mode-label">Animations</span>
+
         <div id="mode-list" role="list">
           <button class="mode-btn active" data-mode="animations">Animations</button>
           <button class="mode-btn" data-mode="clock-digital">Digital Clock</button>
@@ -24,6 +25,13 @@
           <button class="mode-btn" data-mode="ripple">Ripple</button>
           <button class="mode-btn" data-mode="album-art">Album Art</button>
           <button class="mode-btn" data-mode="games">Games</button>
+        </div>
+
+        <div id="anim-controls">
+          <button class="anim-ctrl-btn" id="anim-prev" title="Previous animation">&#9664;</button>
+          <span id="anim-name"></span>
+          <button class="anim-ctrl-btn" id="anim-pin" title="Pin — stop auto-cycling">&#9671;</button>
+          <button class="anim-ctrl-btn" id="anim-next" title="Next animation">&#9654;</button>
         </div>
       </div>
     </div>

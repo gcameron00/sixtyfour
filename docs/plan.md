@@ -40,7 +40,7 @@ Broken into self-contained phases. Each phase should be shippable — the site w
 
 ---
 
-## Phase 3 — Animation engine + first animations
+## Phase 3 — Animation engine + first animations ✓
 
 **Goal:** The display comes alive. The default state is a looping animation; users can cycle through a small pool.
 
