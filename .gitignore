@@ -11,3 +11,6 @@ build/
 
 # Editor settings
 .vscode/
+
+# Claude Code
+.claude/worktrees/
