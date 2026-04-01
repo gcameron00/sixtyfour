@@ -51,17 +51,21 @@ sixtyfour/
 │   │   └── main.js
 │   └── favicon.svg
 └── docs/
+    ├── plan.md         # Phased implementation plan
     └── modes.md        # Detail on planned and implemented display modes
 ```
 
 ## Roadmap
 
-- [ ] Build the 64×64 pixel grid renderer
-- [ ] Implement UI overlay fade in/out behaviour
-- [ ] First animation: something colourful and alive
-- [ ] Digital clock mode
-- [ ] Analogue clock mode
-- [ ] Ripple pool interaction
-- [ ] Built-in album art (Screamadelica first)
-- [ ] Last.fm live album art integration
-- [ ] Games
+| Phase | Focus | Status |
+|-------|-------|--------|
+| 1 | Core renderer — 64×64 canvas, pixel API, render loop | Done |
+| 2 | UI overlay — fade in/out controls | Not started |
+| 3 | Animation engine + first animations | Not started |
+| 4 | Clock modes (digital + analogue) | Not started |
+| 5 | Ripple pool | Not started |
+| 6 | Album art — built-in covers (Screamadelica first) | Not started |
+| 7 | Games (Snake first) | Not started |
+| 8 | Last.fm live album art | Not started |
+
+See [docs/plan.md](docs/plan.md) for the full breakdown of each phase.
