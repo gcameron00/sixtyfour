@@ -13,5 +13,19 @@
       <canvas id="display" width="64" height="64"></canvas>
       <div id="grid-overlay"></div>
     </div>
+
+    <div id="ui-overlay" aria-hidden="true">
+      <div id="mode-bar">
+        <span id="current-mode-label">Animations</span>
+        <div id="mode-list" role="list">
+          <button class="mode-btn active" data-mode="animations">Animations</button>
+          <button class="mode-btn" data-mode="clock-digital">Digital Clock</button>
+          <button class="mode-btn" data-mode="clock-analogue">Analogue Clock</button>
+          <button class="mode-btn" data-mode="ripple">Ripple</button>
+          <button class="mode-btn" data-mode="album-art">Album Art</button>
+          <button class="mode-btn" data-mode="games">Games</button>
+        </div>
+      </div>
+    </div>
   </body>
 </html>

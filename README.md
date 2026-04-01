@@ -60,7 +60,7 @@ sixtyfour/
 | Phase | Focus | Status |
 |-------|-------|--------|
 | 1 | Core renderer — 64×64 canvas, pixel API, render loop | Done |
-| 2 | UI overlay — fade in/out controls | Not started |
+| 2 | UI overlay — fade in/out controls | Done |
 | 3 | Animation engine + first animations | Not started |
 | 4 | Clock modes (digital + analogue) | Not started |
 | 5 | Ripple pool | Not started |

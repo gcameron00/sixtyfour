@@ -78,3 +78,71 @@ function loop() {
 
 drawTestPattern();
 loop();
+
+
+// ─── UI overlay ───────────────────────────────────────────────────────────────
+//
+// Fades in when the user interacts with the area outside the pixel grid, and
+// fades out after HIDE_DELAY ms of inactivity outside the grid.
+//
+// The overlay div itself always has pointer-events:none (set in CSS).
+// Only #mode-bar opts in to pointer events when the overlay is visible,
+// so the canvas is never blocked.
+
+const overlay  = document.getElementById('ui-overlay');
+const modeBar  = document.getElementById('mode-bar');
+const modeLabel = document.getElementById('current-mode-label');
+
+const HIDE_DELAY   = 3000;   // ms before the overlay fades out
+const EDGE_MARGIN  = 48;     // px from viewport edge that also triggers show
+                              // (handles square viewports with no gap around grid)
+
+let hideTimer = null;
+
+function showOverlay() {
+  overlay.classList.add('visible');
+  overlay.setAttribute('aria-hidden', 'false');
+  clearTimeout(hideTimer);
+  hideTimer = setTimeout(hideOverlay, HIDE_DELAY);
+}
+
+function hideOverlay() {
+  overlay.classList.remove('visible');
+  overlay.setAttribute('aria-hidden', 'true');
+}
+
+function resetHideTimer() {
+  clearTimeout(hideTimer);
+  hideTimer = setTimeout(hideOverlay, HIDE_DELAY);
+}
+
+function isOutsideCanvas(x, y) {
+  const rect = document.getElementById('display').getBoundingClientRect();
+  return x < rect.left || x > rect.right || y < rect.top || y > rect.bottom;
+}
+
+function isNearViewportEdge(x, y) {
+  return (
+    x < EDGE_MARGIN ||
+    y < EDGE_MARGIN ||
+    x > window.innerWidth  - EDGE_MARGIN ||
+    y > window.innerHeight - EDGE_MARGIN
+  );
+}
+
+document.addEventListener('mousemove', (e) => {
+  if (isOutsideCanvas(e.clientX, e.clientY) || isNearViewportEdge(e.clientX, e.clientY)) {
+    showOverlay();
+  }
+});
+
+document.addEventListener('touchstart', (e) => {
+  const t = e.touches[0];
+  if (isOutsideCanvas(t.clientX, t.clientY) || isNearViewportEdge(t.clientX, t.clientY)) {
+    showOverlay();
+  }
+}, { passive: true });
+
+// Interacting with the mode bar itself keeps the overlay alive
+modeBar.addEventListener('mouseenter', resetHideTimer);
+modeBar.addEventListener('touchstart', resetHideTimer, { passive: true });

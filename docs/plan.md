@@ -24,7 +24,7 @@ Broken into self-contained phases. Each phase should be shippable — the site w
 
 ---
 
-## Phase 2 — UI overlay
+## Phase 2 — UI overlay ✓
 
 **Goal:** The mode-switching controls exist and behave correctly — visible when needed, invisible otherwise.
 
