@@ -1,7 +1,35 @@
 // sixtyfour — main entry point
 
-import { display }   from './display.js';
-import * as animMode from './modes/animations.js';
+import { display }        from './display.js';
+import * as animMode      from './modes/animations.js';
+import * as clockDigital  from './modes/clock-digital.js';
+import * as clockAnalogue from './modes/clock-analogue.js';
+
+// ─── Mode registry ────────────────────────────────────────────────────────────
+//
+// Each entry implements { activate(), deactivate(), tick(dt) }.
+// Modes not listed here fall through to a blank screen on activate.
+
+const animControls = document.getElementById('anim-controls');
+
+const MODES = {
+  'animations': {
+    activate:   () => { animMode.activate();   animControls.hidden = false; },
+    deactivate: () => { animMode.deactivate(); animControls.hidden = true;  },
+    tick:       (dt) => animMode.tick(dt),
+  },
+  'clock-digital': {
+    activate:   () => clockDigital.activate(display),
+    deactivate: () => clockDigital.deactivate(),
+    tick:       (dt) => clockDigital.tick(dt),
+  },
+  'clock-analogue': {
+    activate:   () => clockAnalogue.activate(display),
+    deactivate: () => clockAnalogue.deactivate(),
+    tick:       (dt) => clockAnalogue.tick(dt),
+  },
+  // 'ripple', 'album-art', 'games' added as phases are implemented
+};
 
 // ─── Render loop ─────────────────────────────────────────────────────────────
 
@@ -9,10 +37,10 @@ let activeMode = 'animations';
 let lastTime   = null;
 
 function loop(timestamp) {
-  const dt  = lastTime === null ? 16 : timestamp - lastTime;
+  const dt = lastTime === null ? 16 : timestamp - lastTime;
   lastTime  = timestamp;
 
-  if (activeMode === 'animations') animMode.tick(dt);
+  MODES[activeMode]?.tick(dt);
 
   display.render();
   requestAnimationFrame(loop);
@@ -20,9 +48,8 @@ function loop(timestamp) {
 
 // ─── Mode switching ───────────────────────────────────────────────────────────
 
-const modeLabel    = document.getElementById('current-mode-label');
-const modeBtns     = document.querySelectorAll('.mode-btn');
-const animControls = document.getElementById('anim-controls');
+const modeLabel = document.getElementById('current-mode-label');
+const modeBtns  = document.querySelectorAll('.mode-btn');
 
 const MODE_LABELS = {
   'animations':    'Animations',
@@ -36,19 +63,15 @@ const MODE_LABELS = {
 function setMode(mode) {
   if (mode === activeMode) return;
 
-  // Tear down previous mode
-  if (activeMode === 'animations') animMode.deactivate();
-  else display.clear();
-
+  MODES[activeMode]?.deactivate();
   activeMode = mode;
 
-  // Start new mode
-  if (mode === 'animations') {
-    animMode.activate();
-    animControls.hidden = false;
+  if (MODES[activeMode]) {
+    MODES[activeMode].activate();
   } else {
-    display.clear();
+    // Unimplemented mode — clear to black
     animControls.hidden = true;
+    display.clear();
   }
 
   modeLabel.textContent = MODE_LABELS[mode] ?? mode;
@@ -65,10 +88,10 @@ const animNameEl = document.getElementById('anim-name');
 const animPinBtn = document.getElementById('anim-pin');
 
 function onAnimChange(anim, _index, pinned, _total) {
-  animNameEl.textContent    = anim.name;
+  animNameEl.textContent = anim.name;
   animPinBtn.classList.toggle('active', pinned);
-  animPinBtn.textContent    = pinned ? '◆' : '◇';
-  animPinBtn.title          = pinned ? 'Unpin — resume auto-cycle' : 'Pin — stop auto-cycling';
+  animPinBtn.textContent = pinned ? '◆' : '◇';
+  animPinBtn.title       = pinned ? 'Unpin — resume auto-cycle' : 'Pin — stop auto-cycling';
 }
 
 document.getElementById('anim-prev').addEventListener('click', () => animMode.prev());
@@ -79,16 +102,13 @@ animPinBtn.addEventListener('click', () => animMode.togglePin());
 //
 // Fades in when the user interacts with the area outside the pixel grid, and
 // fades out after HIDE_DELAY ms of inactivity.
-//
-// The overlay div itself is always pointer-events:none (CSS). Only #mode-bar
-// opts in to pointer events when visible, so the canvas is never blocked.
 
 const overlay = document.getElementById('ui-overlay');
 const modeBar = document.getElementById('mode-bar');
 
-const HIDE_DELAY  = 3000;  // ms idle before fade-out
-const EDGE_MARGIN = 48;    // px from viewport edge that triggers show
-                           // (covers square viewports with no gap around grid)
+const HIDE_DELAY  = 3000;
+const EDGE_MARGIN = 48;
+
 let hideTimer = null;
 
 function showOverlay() {

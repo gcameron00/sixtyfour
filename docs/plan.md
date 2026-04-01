@@ -58,7 +58,7 @@ Broken into self-contained phases. Each phase should be shippable — the site w
 
 ---
 
-## Phase 4 — Clock modes
+## Phase 4 — Clock modes ✓
 
 **Goal:** Two clock modes: digital and analogue.
 
