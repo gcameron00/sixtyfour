@@ -14,3 +14,6 @@ build/
 
 # Claude Code
 .claude/worktrees/
+
+# Source images used with the cover converter tool (keep generated JS, not the originals)
+tools/images/

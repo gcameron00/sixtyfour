@@ -64,7 +64,7 @@ sixtyfour/
 | 3 | Animation engine + first animations | Done |
 | 4 | Clock modes (digital + analogue) | Done |
 | 5 | Ripple pool | Not started |
-| 6 | Album art — built-in covers (Screamadelica first) | Not started |
+| 6 | Album art — built-in covers (Screamadelica first) | Done |
 | 7 | Games (Snake first) | Not started |
 | 8 | Last.fm live album art | Not started |
 

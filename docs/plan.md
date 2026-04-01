@@ -93,7 +93,7 @@ Broken into self-contained phases. Each phase should be shippable — the site w
 
 ---
 
-## Phase 6 — Album art (built-in covers)
+## Phase 6 — Album art (built-in covers) ✓
 
 **Goal:** A mode that shows pixel-rendered album covers from a built-in library.
 

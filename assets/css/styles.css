@@ -179,6 +179,27 @@ body.display {
   border-color: rgba(255, 255, 255, 0.5);
 }
 
+/* ─── Album art controls ─────────────────────────────────────────────────── */
+
+#album-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+#album-info {
+  color: rgba(255, 255, 255, 0.8);
+  font-family: system-ui, sans-serif;
+  font-size: 0.78rem;
+  min-width: 140px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* ─── Content pages (about, etc.) ────────────────────────────────────────── */
 
 :root {

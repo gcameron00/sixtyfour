@@ -4,13 +4,16 @@ import { display }        from './display.js';
 import * as animMode      from './modes/animations.js';
 import * as clockDigital  from './modes/clock-digital.js';
 import * as clockAnalogue from './modes/clock-analogue.js';
+import * as albumArt      from './modes/album-art.js';
 
 // ─── Mode registry ────────────────────────────────────────────────────────────
 //
 // Each entry implements { activate(), deactivate(), tick(dt) }.
 // Modes not listed here fall through to a blank screen on activate.
 
-const animControls = document.getElementById('anim-controls');
+const animControls  = document.getElementById('anim-controls');
+const albumControls = document.getElementById('album-controls');
+const albumInfoEl   = document.getElementById('album-info');
 
 const MODES = {
   'animations': {
@@ -28,7 +31,12 @@ const MODES = {
     deactivate: () => clockAnalogue.deactivate(),
     tick:       (dt) => clockAnalogue.tick(dt),
   },
-  // 'ripple', 'album-art', 'games' added as phases are implemented
+  'album-art': {
+    activate:   () => { albumArt.activate(); albumControls.hidden = false; },
+    deactivate: () => { albumArt.deactivate(); albumControls.hidden = true; },
+    tick:       (dt) => albumArt.tick(dt),
+  },
+  // 'ripple', 'games' added as phases are implemented
 };
 
 // ─── Render loop ─────────────────────────────────────────────────────────────
@@ -158,7 +166,17 @@ document.addEventListener('touchstart', e => {
 modeBar.addEventListener('mouseenter', resetHideTimer);
 modeBar.addEventListener('touchstart', resetHideTimer, { passive: true });
 
+// ─── Album art controls ───────────────────────────────────────────────────────
+
+function onAlbumChange(meta, _index, _total) {
+  albumInfoEl.textContent = `${meta.title} — ${meta.artist}`;
+}
+
+document.getElementById('album-prev').addEventListener('click', () => albumArt.prev());
+document.getElementById('album-next').addEventListener('click', () => albumArt.next());
+
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 
 animMode.init(display, onAnimChange);
+albumArt.init(display, onAlbumChange);
 requestAnimationFrame(loop);

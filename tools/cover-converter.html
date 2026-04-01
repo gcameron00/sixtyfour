@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cover Converter — sixtyfour</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+      gap: 2rem;
+    }
+
+    h1 { font-size: 1.2rem; color: #94a3b8; letter-spacing: 0.05em; }
+
+    #drop-zone {
+      width: 380px;
+      max-width: 100%;
+      border: 2px dashed #334155;
+      border-radius: 8px;
+      padding: 2.5rem 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      color: #64748b;
+    }
+
+    #drop-zone.drag-over {
+      border-color: #60a5fa;
+      background: rgba(96, 165, 250, 0.06);
+      color: #93c5fd;
+    }
+
+    #file-input { display: none; }
+
+    .preview-row {
+      display: flex;
+      gap: 2rem;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .preview-block { display: flex; flex-direction: column; gap: 0.5rem; align-items: center; }
+    .preview-block label { font-size: 0.72rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; }
+
+    canvas {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      border: 1px solid #1e293b;
+    }
+
+    #source-canvas { width: 320px; height: 320px; }
+    #output-canvas { width: 320px; height: 320px; }
+
+    .meta-row {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    input[type="text"] {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #e2e8f0;
+      border-radius: 4px;
+      padding: 0.4rem 0.7rem;
+      font-size: 0.85rem;
+      width: 180px;
+    }
+
+    input[type="text"]::placeholder { color: #475569; }
+
+    button {
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      padding: 0.45rem 1.1rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    button:hover { background: #3b82f6; }
+    button:disabled { background: #1e3a6e; color: #475569; cursor: default; }
+
+    #output-box {
+      width: 580px;
+      max-width: 100%;
+      background: #0a0f1e;
+      border: 1px solid #1e293b;
+      border-radius: 6px;
+      padding: 1rem;
+      font-family: 'Menlo', 'Consolas', monospace;
+      font-size: 0.72rem;
+      color: #7dd3fc;
+      white-space: pre;
+      overflow-x: auto;
+      max-height: 280px;
+      overflow-y: auto;
+      display: none;
+    }
+
+    #copy-btn { display: none; }
+
+    .info { font-size: 0.8rem; color: #475569; text-align: center; max-width: 460px; line-height: 1.6; }
+    .sampling-row { display: flex; align-items: center; gap: 0.75rem; }
+    .sampling-row label { font-size: 0.8rem; color: #94a3b8; }
+    select {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #e2e8f0;
+      border-radius: 4px;
+      padding: 0.4rem 0.5rem;
+      font-size: 0.82rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>sixtyfour — Cover Converter</h1>
+
+  <p class="info">
+    Drop a JPEG or PNG album cover here. It will be downsampled to 64×64 and
+    exported as a JS module ready to drop into <code>assets/js/covers/</code>.
+  </p>
+
+  <div id="drop-zone">
+    <div>Drop an image here</div>
+    <div style="margin-top:0.5rem; font-size:0.8rem">or <span style="color:#60a5fa; cursor:pointer" onclick="document.getElementById('file-input').click()">browse</span></div>
+    <input type="file" id="file-input" accept="image/*" />
+  </div>
+
+  <div class="preview-row" id="preview-row" style="display:none">
+    <div class="preview-block">
+      <label>Original (cropped square)</label>
+      <canvas id="source-canvas" width="320" height="320"></canvas>
+    </div>
+    <div class="preview-block">
+      <label>64×64 preview</label>
+      <canvas id="output-canvas" width="64" height="64"></canvas>
+    </div>
+  </div>
+
+  <div class="sampling-row" id="sampling-row" style="display:none">
+    <label for="sampling-select">Sampling</label>
+    <select id="sampling-select">
+      <option value="bilinear" selected>Bilinear (smooth)</option>
+      <option value="nearest">Nearest neighbour (sharp)</option>
+    </select>
+  </div>
+
+  <div class="meta-row" id="meta-row" style="display:none">
+    <input type="text" id="meta-title"  placeholder="Album title" />
+    <input type="text" id="meta-artist" placeholder="Artist name" />
+    <input type="text" id="meta-year"   placeholder="Year" style="width:80px" />
+    <button id="generate-btn">Generate module</button>
+  </div>
+
+  <pre id="output-box"></pre>
+  <button id="copy-btn">Copy to clipboard</button>
+
+  <p class="info" id="copy-hint" style="display:none">
+    Save the output as <code>assets/js/covers/your-slug.js</code>, then import
+    it in <code>assets/js/modes/album-art.js</code> and add it to the
+    <code>LIBRARY</code> array.
+  </p>
+
+  <script>
+    const dropZone     = document.getElementById('drop-zone');
+    const fileInput    = document.getElementById('file-input');
+    const sourceCanvas = document.getElementById('source-canvas');
+    const outputCanvas = document.getElementById('output-canvas');
+    const outputBox    = document.getElementById('output-box');
+    const copyBtn      = document.getElementById('copy-btn');
+    const generateBtn  = document.getElementById('generate-btn');
+    const previewRow   = document.getElementById('preview-row');
+    const metaRow      = document.getElementById('meta-row');
+    const samplingRow  = document.getElementById('sampling-row');
+    const samplingEl   = document.getElementById('sampling-select');
+    const copyHint     = document.getElementById('copy-hint');
+    const sCtx         = sourceCanvas.getContext('2d');
+    const oCtx         = outputCanvas.getContext('2d');
+
+    let loadedImage = null;
+
+    // ─── Drop / file input ────────────────────────────────────────────────────
+
+    dropZone.addEventListener('dragover', e => {
+      e.preventDefault();
+      dropZone.classList.add('drag-over');
+    });
+
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith('image/')) loadFile(file);
+    });
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files[0]) loadFile(fileInput.files[0]);
+    });
+
+    function loadFile(file) {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        loadedImage = img;
+        URL.revokeObjectURL(url);
+        renderPreviews();
+        previewRow.style.display = 'flex';
+        metaRow.style.display    = 'flex';
+        samplingRow.style.display = 'flex';
+        outputBox.style.display  = 'none';
+        copyBtn.style.display    = 'none';
+        copyHint.style.display   = 'none';
+      };
+      img.src = url;
+    }
+
+    samplingEl.addEventListener('change', () => {
+      if (loadedImage) renderPreviews();
+    });
+
+    // ─── Rendering ────────────────────────────────────────────────────────────
+
+    function renderPreviews() {
+      const img  = loadedImage;
+      const size = Math.min(img.width, img.height);
+      const sx   = (img.width  - size) / 2;
+      const sy   = (img.height - size) / 2;
+
+      // Source preview — centre-cropped square, drawn at 320×320
+      sCtx.clearRect(0, 0, 320, 320);
+      sCtx.drawImage(img, sx, sy, size, size, 0, 0, 320, 320);
+
+      // Downsample to 64×64
+      const tmp  = document.createElement('canvas');
+      tmp.width  = 64;
+      tmp.height = 64;
+      const tCtx = tmp.getContext('2d');
+
+      if (samplingEl.value === 'nearest') {
+        tCtx.imageSmoothingEnabled = false;
+      } else {
+        tCtx.imageSmoothingEnabled = true;
+        tCtx.imageSmoothingQuality = 'high';
+      }
+
+      tCtx.drawImage(img, sx, sy, size, size, 0, 0, 64, 64);
+
+      // Copy raw 64×64 to output canvas
+      const pxData = tCtx.getImageData(0, 0, 64, 64);
+      oCtx.putImageData(pxData, 0, 0);
+
+      // Store pixel data for export
+      outputCanvas._pixelData = pxData;
+    }
+
+    // ─── Module generation ────────────────────────────────────────────────────
+
+    generateBtn.addEventListener('click', () => {
+      const pxData = outputCanvas._pixelData;
+      if (!pxData) return;
+
+      const title  = document.getElementById('meta-title').value.trim()  || 'Unknown Album';
+      const artist = document.getElementById('meta-artist').value.trim() || 'Unknown Artist';
+      const year   = parseInt(document.getElementById('meta-year').value) || '';
+      const yearStr = year ? `, year: ${year}` : '';
+
+      // Encode pixel data as a compact hex string (2 hex chars per channel = 6 per pixel)
+      // Much smaller than a JS array of numbers.
+      const data = pxData.data;
+      const hexParts = [];
+      for (let i = 0; i < data.length; i += 4) {
+        hexParts.push(
+          data[i].toString(16).padStart(2, '0') +
+          data[i+1].toString(16).padStart(2, '0') +
+          data[i+2].toString(16).padStart(2, '0'),
+        );
+      }
+      const hex = hexParts.join('');
+
+      const slug = artist.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-'
+                 + title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+      const mod = `// ${title} — ${artist}${year ? ' (' + year + ')' : ''}
+// Generated by tools/cover-converter.html
+// Pixel data: 64×64 RGB encoded as a compact hex string
+
+export const meta = { title: '${title}', artist: '${artist}'${yearStr} };
+
+const HEX = '${hex}';
+
+export function draw(d) {
+  for (let i = 0; i < 4096; i++) {
+    const o = i * 6;
+    d.setPixel(
+      i % 64,
+      Math.floor(i / 64),
+      parseInt(HEX.slice(o,     o + 2), 16),
+      parseInt(HEX.slice(o + 2, o + 4), 16),
+      parseInt(HEX.slice(o + 4, o + 6), 16),
+    );
+  }
+}
+`;
+
+      outputBox.textContent  = mod;
+      outputBox.style.display = 'block';
+      copyBtn.style.display   = 'inline-block';
+      copyHint.style.display  = 'block';
+      copyBtn.textContent     = 'Copy to clipboard';
+
+      // Suggest a filename in the hint
+      copyHint.innerHTML = `Save as <code>assets/js/covers/${slug}.js</code>, then import it in
+<code>assets/js/modes/album-art.js</code> and add it to the <code>LIBRARY</code> array.`;
+    });
+
+    copyBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(outputBox.textContent).then(() => {
+        copyBtn.textContent = 'Copied!';
+        setTimeout(() => copyBtn.textContent = 'Copy to clipboard', 2000);
+      });
+    });
+  </script>
+</body>
+</html>
