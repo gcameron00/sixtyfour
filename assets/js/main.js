@@ -6,6 +6,7 @@ import * as clockDigital  from './modes/clock-digital.js';
 import * as clockAnalogue from './modes/clock-analogue.js';
 import * as albumArt      from './modes/album-art.js';
 import * as rippleMode    from './modes/ripple.js';
+import * as snake         from './games/snake.js';
 
 // ─── Clock sub-modes ──────────────────────────────────────────────────────────
 
@@ -94,11 +95,11 @@ const PRIMARIES = {
 
   games: {
     label:        'Games',
-    activate:     () => display.clear(),
-    deactivate:   () => {},
-    tick:         () => {},
-    getItems:     () => [],
-    getCurrentId: () => null,
+    activate:     () => snake.activate(display),
+    deactivate:   () => snake.deactivate(),
+    tick:         dt => snake.tick(dt),
+    getItems:     () => [{ id: 'snake', label: 'Snake' }],
+    getCurrentId: () => 'snake',
     selectById:   () => {},
     prev:         () => {},
     next:         () => {},

@@ -107,7 +107,7 @@ Broken into self-contained phases. Each phase should be shippable — the site w
 
 ---
 
-## Phase 7 — Games
+## Phase 7 — Games ✓
 
 **Goal:** At least one playable game on the pixel canvas.
 
