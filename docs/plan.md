@@ -77,7 +77,7 @@ Broken into self-contained phases. Each phase should be shippable — the site w
 
 ---
 
-## Phase 5 — Ripple pool
+## Phase 5 — Ripple pool ✓
 
 **Goal:** The grid simulates a water surface; interaction creates ripples.
 

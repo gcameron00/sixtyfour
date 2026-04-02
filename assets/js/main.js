@@ -5,6 +5,7 @@ import * as animMode      from './modes/animations.js';
 import * as clockDigital  from './modes/clock-digital.js';
 import * as clockAnalogue from './modes/clock-analogue.js';
 import * as albumArt      from './modes/album-art.js';
+import * as rippleMode    from './modes/ripple.js';
 
 // ─── Clock sub-modes ──────────────────────────────────────────────────────────
 
@@ -81,9 +82,9 @@ const PRIMARIES = {
 
   ripple: {
     label:        'Ripple',
-    activate:     () => display.clear(),
-    deactivate:   () => {},
-    tick:         () => {},
+    activate:     () => rippleMode.activate(display),
+    deactivate:   () => rippleMode.deactivate(),
+    tick:         dt => rippleMode.tick(dt),
     getItems:     () => [],
     getCurrentId: () => null,
     selectById:   () => {},
