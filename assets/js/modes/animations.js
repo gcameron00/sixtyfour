@@ -10,8 +10,9 @@ import { colourWash } from '../animations/colour-wash.js';
 import { starfield }  from '../animations/starfield.js';
 import { fire }       from '../animations/fire.js';
 import { rain }       from '../animations/rain.js';
+import { pacman }     from '../animations/pacman.js';
 
-const POOL            = [colourWash, starfield, fire, rain];
+const POOL            = [colourWash, starfield, fire, rain, pacman];
 const CYCLE_INTERVAL  = 60_000;  // ms between auto-advances when not pinned
 
 let display       = null;

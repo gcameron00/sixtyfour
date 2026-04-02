@@ -199,6 +199,10 @@ function handleKey(e) {
   }
 }
 
+function handleClick() {
+  if (dead) startGame();
+}
+
 function handleTouchStart(e) {
   touchStartX = e.touches[0].clientX;
   touchStartY = e.touches[0].clientY;
@@ -224,12 +228,14 @@ export function activate(display) {
   d = display;
   startGame();
   window.addEventListener('keydown',    handleKey);
+  window.addEventListener('click',      handleClick);
   window.addEventListener('touchstart', handleTouchStart, { passive: true });
   window.addEventListener('touchend',   handleTouchEnd,   { passive: true });
 }
 
 export function deactivate() {
   window.removeEventListener('keydown',    handleKey);
+  window.removeEventListener('click',      handleClick);
   window.removeEventListener('touchstart', handleTouchStart);
   window.removeEventListener('touchend',   handleTouchEnd);
 }
