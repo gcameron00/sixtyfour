@@ -6,134 +6,225 @@ import * as clockDigital  from './modes/clock-digital.js';
 import * as clockAnalogue from './modes/clock-analogue.js';
 import * as albumArt      from './modes/album-art.js';
 
-// ─── Mode registry ────────────────────────────────────────────────────────────
-//
-// Each entry implements { activate(), deactivate(), tick(dt) }.
-// Modes not listed here fall through to a blank screen on activate.
+// ─── Clock sub-modes ──────────────────────────────────────────────────────────
 
-const animControls  = document.getElementById('anim-controls');
-const albumControls = document.getElementById('album-controls');
-const albumInfoEl   = document.getElementById('album-info');
+let activeClockId = 'digital';
 
-const MODES = {
-  'animations': {
-    activate:   () => { animMode.activate();   animControls.hidden = false; },
-    deactivate: () => { animMode.deactivate(); animControls.hidden = true;  },
-    tick:       (dt) => animMode.tick(dt),
-  },
-  'clock-digital': {
+const CLOCK_SUBS = {
+  digital:  {
     activate:   () => clockDigital.activate(display),
     deactivate: () => clockDigital.deactivate(),
-    tick:       (dt) => clockDigital.tick(dt),
+    tick:       dt => clockDigital.tick(dt),
   },
-  'clock-analogue': {
+  analogue: {
     activate:   () => clockAnalogue.activate(display),
     deactivate: () => clockAnalogue.deactivate(),
-    tick:       (dt) => clockAnalogue.tick(dt),
+    tick:       dt => clockAnalogue.tick(dt),
   },
-  'album-art': {
-    activate:   () => { albumArt.activate(); albumControls.hidden = false; },
-    deactivate: () => { albumArt.deactivate(); albumControls.hidden = true; },
-    tick:       (dt) => albumArt.tick(dt),
-  },
-  // 'ripple', 'games' added as phases are implemented
 };
 
-// ─── Render loop ─────────────────────────────────────────────────────────────
+// ─── Primary mode registry ────────────────────────────────────────────────────
+//
+// Each primary exposes: activate, deactivate, tick, getItems, getCurrentId,
+// selectById, prev, next.
 
-let activeMode = 'animations';
-let lastTime   = null;
+let activePrimaryId = 'animations';
+
+const PRIMARIES = {
+  animations: {
+    label:        'Animations',
+    activate:     () => animMode.activate(),
+    deactivate:   () => animMode.deactivate(),
+    tick:         dt => animMode.tick(dt),
+    getItems:     () => animMode.getItems(),
+    getCurrentId: () => animMode.getCurrentId(),
+    selectById:   id => animMode.selectById(id),
+    prev:         () => animMode.prev(),
+    next:         () => animMode.next(),
+  },
+
+  clock: {
+    label:        'Clock',
+    activate:     () => CLOCK_SUBS[activeClockId].activate(),
+    deactivate:   () => CLOCK_SUBS[activeClockId].deactivate(),
+    tick:         dt => CLOCK_SUBS[activeClockId].tick(dt),
+    getItems:     () => [{ id: 'digital', label: 'Digital' }, { id: 'analogue', label: 'Analogue' }],
+    getCurrentId: () => activeClockId,
+    selectById(id) {
+      if (id === activeClockId) return;
+      CLOCK_SUBS[activeClockId].deactivate();
+      activeClockId = id;
+      CLOCK_SUBS[activeClockId].activate();
+      renderSecondary();
+    },
+    prev() {
+      const ids = ['digital', 'analogue'];
+      PRIMARIES.clock.selectById(ids[(ids.indexOf(activeClockId) - 1 + 2) % 2]);
+    },
+    next() {
+      const ids = ['digital', 'analogue'];
+      PRIMARIES.clock.selectById(ids[(ids.indexOf(activeClockId) + 1) % 2]);
+    },
+  },
+
+  'album-art': {
+    label:        'Album Art',
+    activate:     () => albumArt.activate(),
+    deactivate:   () => albumArt.deactivate(),
+    tick:         dt => albumArt.tick(dt),
+    getItems:     () => albumArt.getItems(),
+    getCurrentId: () => albumArt.getCurrentId(),
+    selectById:   id => albumArt.selectById(id),
+    prev:         () => albumArt.prev(),
+    next:         () => albumArt.next(),
+  },
+
+  ripple: {
+    label:        'Ripple',
+    activate:     () => display.clear(),
+    deactivate:   () => {},
+    tick:         () => {},
+    getItems:     () => [],
+    getCurrentId: () => null,
+    selectById:   () => {},
+    prev:         () => {},
+    next:         () => {},
+  },
+
+  games: {
+    label:        'Games',
+    activate:     () => display.clear(),
+    deactivate:   () => {},
+    tick:         () => {},
+    getItems:     () => [],
+    getCurrentId: () => null,
+    selectById:   () => {},
+    prev:         () => {},
+    next:         () => {},
+  },
+};
+
+const PRIMARY_ORDER = ['animations', 'clock', 'album-art', 'ripple', 'games'];
+
+// ─── Render loop ──────────────────────────────────────────────────────────────
+
+let lastTime = null;
 
 function loop(timestamp) {
   const dt = lastTime === null ? 16 : timestamp - lastTime;
   lastTime  = timestamp;
-
-  MODES[activeMode]?.tick(dt);
-
+  PRIMARIES[activePrimaryId].tick(dt);
   display.render();
   requestAnimationFrame(loop);
 }
 
 // ─── Mode switching ───────────────────────────────────────────────────────────
 
-const modeLabel = document.getElementById('current-mode-label');
-const modeBtns  = document.querySelectorAll('.mode-btn');
-
-const MODE_LABELS = {
-  'animations':    'Animations',
-  'clock-digital': 'Digital Clock',
-  'clock-analogue':'Analogue Clock',
-  'ripple':        'Ripple',
-  'album-art':     'Album Art',
-  'games':         'Games',
-};
-
-function setMode(mode) {
-  if (mode === activeMode) return;
-
-  MODES[activeMode]?.deactivate();
-  activeMode = mode;
-
-  if (MODES[activeMode]) {
-    MODES[activeMode].activate();
-  } else {
-    // Unimplemented mode — clear to black
-    animControls.hidden = true;
-    display.clear();
-  }
-
-  modeLabel.textContent = MODE_LABELS[mode] ?? mode;
-  modeBtns.forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+function setActivePrimary(id) {
+  if (id === activePrimaryId) return;
+  PRIMARIES[activePrimaryId].deactivate();
+  activePrimaryId = id;
+  PRIMARIES[activePrimaryId].activate();
+  renderPrimary();
+  renderSecondary();
 }
 
-modeBtns.forEach(btn => {
-  btn.addEventListener('click', () => setMode(btn.dataset.mode));
+// ─── Strip rendering ──────────────────────────────────────────────────────────
+
+const primaryScroll   = document.getElementById('primary-scroll');
+const secondaryScroll = document.getElementById('secondary-scroll');
+
+function renderPrimary() {
+  primaryScroll.innerHTML = '';
+  for (const id of PRIMARY_ORDER) {
+    const btn = document.createElement('button');
+    btn.className   = 'strip-item' + (id === activePrimaryId ? ' active' : '');
+    btn.textContent = PRIMARIES[id].label;
+    btn.addEventListener('click', () => setActivePrimary(id));
+    primaryScroll.appendChild(btn);
+  }
+  scrollActiveIntoView(primaryScroll);
+}
+
+function renderSecondary() {
+  secondaryScroll.innerHTML = '';
+  const p        = PRIMARIES[activePrimaryId];
+  const items    = p.getItems();
+  const activeId = p.getCurrentId();
+  for (const item of items) {
+    const btn = document.createElement('button');
+    btn.className   = 'strip-item' + (item.id === activeId ? ' active' : '');
+    btn.textContent = item.label;
+    btn.addEventListener('click', () => p.selectById(item.id));
+    secondaryScroll.appendChild(btn);
+  }
+  scrollActiveIntoView(secondaryScroll);
+}
+
+function scrollActiveIntoView(scrollEl) {
+  scrollEl.querySelector('.strip-item.active')
+    ?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+}
+
+// ─── Arrow buttons ────────────────────────────────────────────────────────────
+
+const primaryPrev   = document.getElementById('primary-prev');
+const primaryNext   = document.getElementById('primary-next');
+const secondaryPrev = document.getElementById('secondary-prev');
+const secondaryNext = document.getElementById('secondary-next');
+
+primaryPrev.addEventListener('click', () => {
+  const i = PRIMARY_ORDER.indexOf(activePrimaryId);
+  setActivePrimary(PRIMARY_ORDER[(i - 1 + PRIMARY_ORDER.length) % PRIMARY_ORDER.length]);
 });
 
-// ─── Animation controls ───────────────────────────────────────────────────────
+primaryNext.addEventListener('click', () => {
+  const i = PRIMARY_ORDER.indexOf(activePrimaryId);
+  setActivePrimary(PRIMARY_ORDER[(i + 1) % PRIMARY_ORDER.length]);
+});
 
-const animNameEl = document.getElementById('anim-name');
-const animPinBtn = document.getElementById('anim-pin');
+secondaryPrev.addEventListener('click', () => PRIMARIES[activePrimaryId].prev());
+secondaryNext.addEventListener('click', () => PRIMARIES[activePrimaryId].next());
 
-function onAnimChange(anim, _index, pinned, _total) {
-  animNameEl.textContent = anim.name;
-  animPinBtn.classList.toggle('active', pinned);
-  animPinBtn.textContent = pinned ? '◆' : '◇';
-  animPinBtn.title       = pinned ? 'Unpin — resume auto-cycle' : 'Pin — stop auto-cycling';
+function updateArrowSymbols() {
+  const portrait = window.matchMedia('(orientation: portrait)').matches;
+  primaryPrev.textContent   = portrait ? '◀' : '▲';
+  primaryNext.textContent   = portrait ? '▶' : '▼';
+  secondaryPrev.textContent = portrait ? '◀' : '▲';
+  secondaryNext.textContent = portrait ? '▶' : '▼';
 }
 
-document.getElementById('anim-prev').addEventListener('click', () => animMode.prev());
-document.getElementById('anim-next').addEventListener('click', () => animMode.next());
-animPinBtn.addEventListener('click', () => animMode.togglePin());
+window.matchMedia('(orientation: portrait)').addEventListener('change', updateArrowSymbols);
 
-// ─── UI overlay ───────────────────────────────────────────────────────────────
+// ─── Show / hide strips ───────────────────────────────────────────────────────
 //
-// Fades in when the user interacts with the area outside the pixel grid, and
-// fades out after HIDE_DELAY ms of inactivity.
+// Strips fade in when the user interacts outside the pixel grid, and fade out
+// after HIDE_DELAY ms of inactivity.
 
-const overlay = document.getElementById('ui-overlay');
-const modeBar = document.getElementById('mode-bar');
+const primaryStrip   = document.getElementById('primary-strip');
+const secondaryStrip = document.getElementById('secondary-strip');
+const HIDE_DELAY     = 3000;
+let   hideTimer      = null;
 
-const HIDE_DELAY  = 3000;
-const EDGE_MARGIN = 48;
-
-let hideTimer = null;
-
-function showOverlay() {
-  overlay.classList.add('visible');
-  overlay.setAttribute('aria-hidden', 'false');
+function showStrips() {
+  primaryStrip.classList.add('visible');
+  secondaryStrip.classList.add('visible');
+  primaryStrip.removeAttribute('aria-hidden');
+  secondaryStrip.removeAttribute('aria-hidden');
   clearTimeout(hideTimer);
-  hideTimer = setTimeout(hideOverlay, HIDE_DELAY);
+  hideTimer = setTimeout(hideStrips, HIDE_DELAY);
 }
 
-function hideOverlay() {
-  overlay.classList.remove('visible');
-  overlay.setAttribute('aria-hidden', 'true');
+function hideStrips() {
+  primaryStrip.classList.remove('visible');
+  secondaryStrip.classList.remove('visible');
+  primaryStrip.setAttribute('aria-hidden', 'true');
+  secondaryStrip.setAttribute('aria-hidden', 'true');
 }
 
 function resetHideTimer() {
   clearTimeout(hideTimer);
-  hideTimer = setTimeout(hideOverlay, HIDE_DELAY);
+  hideTimer = setTimeout(hideStrips, HIDE_DELAY);
 }
 
 function isOutsideCanvas(x, y) {
@@ -141,42 +232,35 @@ function isOutsideCanvas(x, y) {
   return x < rect.left || x > rect.right || y < rect.top || y > rect.bottom;
 }
 
-function isNearViewportEdge(x, y) {
-  return (
-    x < EDGE_MARGIN ||
-    y < EDGE_MARGIN ||
-    x > window.innerWidth  - EDGE_MARGIN ||
-    y > window.innerHeight - EDGE_MARGIN
-  );
-}
-
 document.addEventListener('mousemove', e => {
-  if (isOutsideCanvas(e.clientX, e.clientY) || isNearViewportEdge(e.clientX, e.clientY)) {
-    showOverlay();
-  }
+  if (isOutsideCanvas(e.clientX, e.clientY)) showStrips();
 });
 
 document.addEventListener('touchstart', e => {
   const t = e.touches[0];
-  if (isOutsideCanvas(t.clientX, t.clientY) || isNearViewportEdge(t.clientX, t.clientY)) {
-    showOverlay();
-  }
+  if (isOutsideCanvas(t.clientX, t.clientY)) showStrips();
 }, { passive: true });
 
-modeBar.addEventListener('mouseenter', resetHideTimer);
-modeBar.addEventListener('touchstart', resetHideTimer, { passive: true });
+primaryStrip.addEventListener('mouseenter',  resetHideTimer);
+secondaryStrip.addEventListener('mouseenter', resetHideTimer);
+primaryStrip.addEventListener('touchstart',  resetHideTimer, { passive: true });
+secondaryStrip.addEventListener('touchstart', resetHideTimer, { passive: true });
 
-// ─── Album art controls ───────────────────────────────────────────────────────
+// ─── Mode-change callbacks ────────────────────────────────────────────────────
 
-function onAlbumChange(meta, _index, _total) {
-  albumInfoEl.textContent = `${meta.title} — ${meta.artist}`;
+function onAnimChange() {
+  if (activePrimaryId === 'animations') renderSecondary();
 }
 
-document.getElementById('album-prev').addEventListener('click', () => albumArt.prev());
-document.getElementById('album-next').addEventListener('click', () => albumArt.next());
+function onAlbumChange() {
+  if (activePrimaryId === 'album-art') renderSecondary();
+}
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 
 animMode.init(display, onAnimChange);
 albumArt.init(display, onAlbumChange);
+updateArrowSymbols();
+renderPrimary();
+renderSecondary();
 requestAnimationFrame(loop);

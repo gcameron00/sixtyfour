@@ -9,37 +9,23 @@
     <script type="module" src="/assets/js/main.js"></script>
   </head>
   <body class="display">
+
+    <nav id="primary-strip" class="strip" aria-label="Mode" aria-hidden="true">
+      <button class="strip-arrow" id="primary-prev"></button>
+      <div class="strip-scroll" id="primary-scroll" role="list"></div>
+      <button class="strip-arrow" id="primary-next"></button>
+    </nav>
+
     <div class="display-wrap">
       <canvas id="display" width="64" height="64"></canvas>
       <div id="grid-overlay"></div>
     </div>
 
-    <div id="ui-overlay" aria-hidden="true">
-      <div id="mode-bar">
-        <span id="current-mode-label">Animations</span>
+    <nav id="secondary-strip" class="strip" aria-label="Sub-mode" aria-hidden="true">
+      <button class="strip-arrow" id="secondary-prev"></button>
+      <div class="strip-scroll" id="secondary-scroll" role="list"></div>
+      <button class="strip-arrow" id="secondary-next"></button>
+    </nav>
 
-        <div id="mode-list" role="list">
-          <button class="mode-btn active" data-mode="animations">Animations</button>
-          <button class="mode-btn" data-mode="clock-digital">Digital Clock</button>
-          <button class="mode-btn" data-mode="clock-analogue">Analogue Clock</button>
-          <button class="mode-btn" data-mode="ripple">Ripple</button>
-          <button class="mode-btn" data-mode="album-art">Album Art</button>
-          <button class="mode-btn" data-mode="games">Games</button>
-        </div>
-
-        <div id="anim-controls">
-          <button class="anim-ctrl-btn" id="anim-prev" title="Previous animation">&#9664;</button>
-          <span id="anim-name"></span>
-          <button class="anim-ctrl-btn" id="anim-pin" title="Pin — stop auto-cycling">&#9671;</button>
-          <button class="anim-ctrl-btn" id="anim-next" title="Next animation">&#9654;</button>
-        </div>
-
-        <div id="album-controls" hidden>
-          <button class="anim-ctrl-btn" id="album-prev" title="Previous cover">&#9664;</button>
-          <span id="album-info"></span>
-          <button class="anim-ctrl-btn" id="album-next" title="Next cover">&#9654;</button>
-        </div>
-      </div>
-    </div>
   </body>
 </html>

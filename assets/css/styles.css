@@ -1,4 +1,4 @@
-/* ─── Reset ─────────────────────────────────────────────────────────────── */
+/* ─── Reset ──────────────────────────────────────────────────────────────── */
 
 *, *::before, *::after {
   box-sizing: border-box;
@@ -6,7 +6,28 @@
   padding: 0;
 }
 
-/* ─── Display page ───────────────────────────────────────────────────────── */
+/* ─── Variables ──────────────────────────────────────────────────────────── */
+
+:root {
+  --strip: 56px;
+
+  color-scheme: light dark;
+  --color-bg:     #ffffff;
+  --color-text:   #1e293b;
+  --color-muted:  #64748b;
+  --color-accent: #2563eb;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg:     #0f172a;
+    --color-text:   #e2e8f0;
+    --color-muted:  #94a3b8;
+    --color-accent: #60a5fa;
+  }
+}
+
+/* ─── Display page — base ────────────────────────────────────────────────── */
 
 body.display {
   width: 100%;
@@ -18,18 +39,79 @@ body.display {
   justify-content: center;
 }
 
+/* ─── Portrait layout: strips above / below, grid fills remaining height ─── */
+
+@media (orientation: portrait) {
+  body.display {
+    flex-direction: column;
+  }
+
+  .display-wrap {
+    width:  min(100vw, calc(100dvh - 2 * var(--strip)));
+    height: min(100vw, calc(100dvh - 2 * var(--strip)));
+  }
+
+  .strip {
+    width: 100%;
+    height: var(--strip);
+    flex-direction: row;
+  }
+
+  .strip-scroll {
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  #primary-strip   { border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+  #secondary-strip { border-top:    1px solid rgba(255, 255, 255, 0.08); }
+}
+
+/* ─── Landscape layout: strips left / right, grid fills remaining width ──── */
+
+@media (orientation: landscape) {
+  body.display {
+    flex-direction: row;
+  }
+
+  .display-wrap {
+    width:  min(calc(100vw - 2 * var(--strip)), 100dvh);
+    height: min(calc(100vw - 2 * var(--strip)), 100dvh);
+  }
+
+  .strip {
+    width: var(--strip);
+    height: 100dvh;
+    flex-direction: column;
+  }
+
+  .strip-scroll {
+    flex-direction: column;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .strip-item {
+    writing-mode: vertical-lr;
+    transform: rotate(180deg);
+    padding: 0.65rem 0.3rem;
+  }
+
+  #primary-strip   { border-right: 1px solid rgba(255, 255, 255, 0.08); }
+  #secondary-strip { border-left:  1px solid rgba(255, 255, 255, 0.08); }
+}
+
+/* ─── Display wrap ───────────────────────────────────────────────────────── */
+
 .display-wrap {
   position: relative;
-  width: 100vmin;
-  height: 100vmin;
+  flex-shrink: 0;
 }
 
 #display {
   display: block;
   width: 100%;
   height: 100%;
-  /* Nearest-neighbour upscaling — every canvas pixel maps to a solid block,
-     no colour blending between pixels */
   image-rendering: pixelated;
   image-rendering: crisp-edges;
 }
@@ -38,7 +120,6 @@ body.display {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  /* 1px lines every 1/64th of the container — pure CSS, no canvas involvement */
   background-image:
     repeating-linear-gradient(
       to right,
@@ -56,168 +137,90 @@ body.display {
     );
 }
 
-/* ─── UI overlay ─────────────────────────────────────────────────────────── */
+/* ─── Strips ─────────────────────────────────────────────────────────────── */
 
-#ui-overlay {
-  position: fixed;
-  inset: 0;
-  /* Never intercept pointer events at the overlay level — children opt in */
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.5s ease;
+.strip {
   display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-}
-
-#ui-overlay.visible {
-  opacity: 1;
-}
-
-#mode-bar {
-  pointer-events: none;
+  align-items: center;
+  flex-shrink: 0;
   background: rgba(0, 0, 0, 0.72);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 0.7rem 1.25rem;
-  display: flex;
-  align-items: center;
-  gap: 1.25rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
 }
 
-#ui-overlay.visible #mode-bar {
+.strip.visible {
+  opacity: 1;
   pointer-events: auto;
 }
 
-#current-mode-label {
-  color: rgba(255, 255, 255, 0.4);
-  font-family: system-ui, sans-serif;
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-#mode-list {
+.strip-scroll {
   display: flex;
-  gap: 0.4rem;
-  overflow-x: auto;
+  flex: 1;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.4rem;
+  min-width: 0;
+  min-height: 0;
   scrollbar-width: none;
 }
 
-#mode-list::-webkit-scrollbar {
+.strip-scroll::-webkit-scrollbar {
   display: none;
 }
 
-.mode-btn {
+/* ─── Strip arrow buttons ────────────────────────────────────────────────── */
+
+.strip-arrow {
+  flex-shrink: 0;
+  width: var(--strip);
+  height: var(--strip);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.65rem;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.strip-arrow:hover {
+  color: #fff;
+}
+
+/* ─── Strip item buttons ─────────────────────────────────────────────────── */
+
+.strip-item {
+  flex-shrink: 0;
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.18);
   color: rgba(255, 255, 255, 0.55);
   font-family: system-ui, sans-serif;
-  font-size: 0.78rem;
-  padding: 0.3rem 0.7rem;
+  font-size: 0.75rem;
+  padding: 0.3rem 0.65rem;
   border-radius: 3px;
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 
-.mode-btn:hover {
+.strip-item:hover {
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
   border-color: rgba(255, 255, 255, 0.4);
 }
 
-.mode-btn.active {
+.strip-item.active {
   background: rgba(255, 255, 255, 0.14);
   color: #fff;
   border-color: rgba(255, 255, 255, 0.45);
 }
 
-/* ─── Animation controls ─────────────────────────────────────────────────── */
-
-#anim-controls {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  margin-left: auto;
-  flex-shrink: 0;
-}
-
-#anim-name {
-  color: rgba(255, 255, 255, 0.8);
-  font-family: system-ui, sans-serif;
-  font-size: 0.78rem;
-  min-width: 88px;
-  text-align: center;
-  white-space: nowrap;
-}
-
-.anim-ctrl-btn {
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.7rem;
-  padding: 0.3rem 0.5rem;
-  border-radius: 3px;
-  cursor: pointer;
-  line-height: 1;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
-}
-
-.anim-ctrl-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.4);
-}
-
-.anim-ctrl-btn.active {
-  background: rgba(255, 255, 255, 0.18);
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.5);
-}
-
-/* ─── Album art controls ─────────────────────────────────────────────────── */
-
-#album-controls {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  margin-left: auto;
-  flex-shrink: 0;
-}
-
-#album-info {
-  color: rgba(255, 255, 255, 0.8);
-  font-family: system-ui, sans-serif;
-  font-size: 0.78rem;
-  min-width: 140px;
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* ─── Content pages (about, etc.) ────────────────────────────────────────── */
-
-:root {
-  color-scheme: light dark;
-  --color-bg: #ffffff;
-  --color-text: #1e293b;
-  --color-muted: #64748b;
-  --color-accent: #2563eb;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg: #0f172a;
-    --color-text: #e2e8f0;
-    --color-muted: #94a3b8;
-    --color-accent: #60a5fa;
-  }
-}
+/* ─── Content pages ──────────────────────────────────────────────────────── */
 
 body:not(.display) {
   font-family: system-ui, sans-serif;
@@ -227,14 +230,8 @@ body:not(.display) {
   line-height: 1.6;
 }
 
-body:not(.display) h1 {
-  margin-bottom: 0.5rem;
-}
-
-body:not(.display) h2 {
-  margin-top: 2rem;
-  margin-bottom: 0.5rem;
-}
+body:not(.display) h1 { margin-bottom: 0.5rem; }
+body:not(.display) h2 { margin-top: 2rem; margin-bottom: 0.5rem; }
 
 body:not(.display) p,
 body:not(.display) ul {
@@ -242,15 +239,11 @@ body:not(.display) ul {
   color: var(--color-text);
 }
 
-body:not(.display) ul {
-  padding-left: 1.5rem;
-}
+body:not(.display) ul { padding-left: 1.5rem; }
 
 body:not(.display) a {
   color: var(--color-accent);
   text-decoration: none;
 }
 
-body:not(.display) main {
-  max-width: 640px;
-}
+body:not(.display) main { max-width: 640px; }

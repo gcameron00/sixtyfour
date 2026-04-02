@@ -17,7 +17,7 @@ function createStar(scattered = false) {
 }
 
 export const starfield = {
-  name: 'Starfield',
+  name: 'Space Warp',
 
   init(display) {
     d     = display;

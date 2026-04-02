@@ -82,3 +82,20 @@ export function togglePin() {
   scheduleCycle();
   onChangeCb?.(current(), index, pinned, POOL.length);
 }
+
+export function getItems() {
+  return POOL.map((anim, i) => ({ id: String(i), label: anim.name }));
+}
+
+export function getCurrentId() {
+  return String(index);
+}
+
+export function selectById(id) {
+  const i = Number(id);
+  if (i === index || isNaN(i) || i < 0 || i >= POOL.length) return;
+  stopCurrent();
+  index = i;
+  startCurrent();
+  scheduleCycle();
+}

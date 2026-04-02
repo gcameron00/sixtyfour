@@ -118,3 +118,15 @@ export function next() {
 export function prev() {
   navigate((currentIndex - 1 + LIBRARY.length) % LIBRARY.length);
 }
+
+export function getItems() {
+  return LIBRARY.map((cover, i) => ({ id: String(i), label: cover.meta.title }));
+}
+
+export function getCurrentId() {
+  return String(currentIndex);
+}
+
+export function selectById(id) {
+  navigate(Number(id));
+}
